@@ -53,3 +53,17 @@ The ObCreateObject function prototype is defined as follows:
      OUT PVOID *Object
  );
 ```
+
+exmon
+-----
+The `exmon` plugin monitors the execution of KiDispatchException, which is the Windows exception handler function when an exception occurs in either user- or kernel-space. The plugin extract the information from the TrapFrame input containing the CPU state when the exception occured.
+
+The ReactOS definition of this function is as follows (from http://doxygen.reactos.org/d7/d7f/ntoskrnl_2ke_2amd64_2except_8c_a660d1a46ff201c5861caf9667937f73f.html):
+```
+VOID NTAPI KiDispatchException 	( 	IN PEXCEPTION_RECORD  	ExceptionRecord,
+		IN PKEXCEPTION_FRAME  	ExceptionFrame,
+		IN PKTRAP_FRAME  	TrapFrame,
+		IN KPROCESSOR_MODE  	PreviousMode,
+		IN BOOLEAN  	FirstChance 
+	) 
+```
