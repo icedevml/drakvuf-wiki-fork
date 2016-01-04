@@ -22,6 +22,6 @@ PVOID ExAllocatePoolWithTag(
   _In_ SIZE_T    NumberOfBytes,
   _In_ ULONG     Tag
 );
+```
 
 The inputs of to this functions can be found at different locations, depending whether the guest is 32-bit or 64-bit, as function-call conventions differ. On 32-bit systems the inputs are found on the stack, while on 64-bit systems the first four inputs are always passed via registers.
-```
