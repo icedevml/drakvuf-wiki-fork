@@ -1,6 +1,3 @@
-DRAKVUF Plugin Developers Guide
-===============================
-
 Since DRAKVUF 0.2 new functionality can be added in form of independent plugins. 
 This guide aims to help developing new plugins.
 
