@@ -1,6 +1,3 @@
-DRAKVUF Plugin Documentation
-============================
-
 DRAKVUF consists of several plugins, each collecting different aspects of the guests' execution, like logging system calls or tracking kernel heap allocations.
 
 Currently available plugins:
