@@ -81,7 +81,7 @@ In our experience ExAllocatePoolWithTag is mostly called from a single location 
 
 filedelete
 ----------
-The `filedelete` plugin monitors the execution of NtSetInformationFile and ZwSetInformationFile, which are functions responsible for deleting files (there are some others too, such as NtDeleteFile). When the function is called and the fifth input of the function is FILE_DISPOSITION_INFORMATION (13) the file path is determined by walking the handle table of the process via the DRAKVUF function `drakvuf_get_obj_by_handle`.
+The `filedelete` plugin monitors the execution of NtSetInformationFile and ZwSetInformationFile, which are functions responsible for deleting files (there are some others too, such as NtDeleteFile). When the function is called and the fifth input of the function is `FILE_DISPOSITION_INFORMATION` (13) the file path is determined by walking the handle table of the process via the DRAKVUF function `drakvuf_get_obj_by_handle`. Once the address is known, it be extracting using the Volatility plugin `dumpfiles`.
 
 The function prototype according to MSDN (https://msdn.microsoft.com/en-us/library/windows/hardware/ff567096%28v=vs.85%29.aspx):
 ```
