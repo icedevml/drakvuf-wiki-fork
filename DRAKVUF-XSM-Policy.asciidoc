@@ -1,0 +1,425 @@
+The following XSM policy can be used to run DRAKVUF from a secondary control domain on Xen 4.6 or later using the XSM framework. In order to be able to load this policy, Xen has to be compiled with XSM enabled. This policy creates a secondary control domain class named "jenkins_t" and a guest type to be introspected "jenkins_domU_t".
+
+1. Create a folder in your Xen source folder in tools/flask/policy/policy/modules named drakvuf
+
+   cd <where you have your Xen source>
+   mkdir tools/flask/policy/policy/modules/drakvuf
+
+2. Edig tools/flask/policy/policy/modules.conf and change it to
+
+   xen = off
+   drakvuf = on
+
+3. Change the users defined on the system by editing tools/flask/policy/policy/users and add
+
+   gen_user(normal,, vm_r, s0, s0)
+
+4. Paste the following into tools/flask/policy/policy/modules/drakvuf/drakvuf.if
+
+    # Macro definitions for FLASK policy
+    ################################################################################
+    #
+    # Domain creation and setup
+    #
+    ################################################################################
+    define(`declare_domain_common', `
+    	allow $1 $2:grant { query setup };
+    	allow $1 $2:mmu { adjust physmap map_read map_write stat pinpage updatemp mmuext_op };
+    	allow $1 $2:hvm { getparam setparam altp2mhvm_op };
+    	allow $1 $2:domain2 get_vnumainfo;
+    ')
+    # declare_domain(type, attrs...)
+    #   Declare a domain type, along with associated _self and _channel types
+    #   Allow the domain to perform basic operations on itself
+    define(`declare_domain', `
+    	type $1, domain_type`'ifelse(`$#', `1', `', `,shift($@)');
+    	type $1_self, domain_type, domain_self_type;
+    	type_transition $1 $1:domain $1_self;
+    	type $1_channel, event_type;
+    	type_transition $1 domain_type:event $1_channel;
+    	declare_domain_common($1, $1_self)
+    ')
+    # declare_singleton_domain(type, attrs...)
+    #   Declare a domain type and associated _channel types.
+    #   Note: Because the domain can perform basic operations on itself and any
+    #   other domain of the same type, this constructor should be used for types
+    #   containing at most one domain. This is not enforced by policy.
+    define(`declare_singleton_domain', `
+    	type $1, domain_type`'ifelse(`$#', `1', `', `,shift($@)');
+    	define(`$1_self', `$1')
+    	type $1_channel, event_type;
+    	type_transition $1 domain_type:event $1_channel;
+    	declare_domain_common($1, $1)
+    ')
+    # declare_build_label(type)
+    #   Declare a paired _building type for the given domain type
+    define(`declare_build_label', `
+    	type $1_building, domain_type;
+    	type_transition $1_building domain_type:event $1_channel;
+    	allow $1_building $1 : domain transition;
+    ')
+    define(`create_domain_common', `
+    	allow $1 $2:domain { create max_vcpus setdomainmaxmem setaddrsize
+    			getdomaininfo hypercall setvcpucontext setextvcpucontext
+    			getscheduler getvcpuinfo getvcpuextstate getaddrsize
+    			getaffinity setaffinity setvcpuextstate };
+    	allow $1 $2:domain2 { set_cpuid settsc setscheduler setclaim
+    			set_max_evtchn set_vnumainfo get_vnumainfo cacheflush
+    			psr_cmt_op psr_cat_op };
+    	allow $1 $2:security check_context;
+    	allow $1 $2:shadow enable;
+    	allow $1 $2:mmu { stat map_read map_write adjust memorymap physmap pinpage mmuext_op updatemp };
+    	allow $1 $2:grant setup;
+    	allow $1 $2:hvm { cacheattr getparam hvmctl irqlevel pciroute sethvmc
+    			setparam pcilevel trackdirtyvram nested altp2mhvm altp2mhvm_op };
+    ')
+    define(`vmi', `
+    	allow $1 $2:domain { setdebugging };
+    	allow $1 $2:domain2 { mem_access vm_event gettsc };
+    	allow $1 $2:hvm { gethvmc sethvmc getparam altp2mhvm_op };
+    	allow $1 $2:mmu { stat map_read map_write adjust pageinfo };
+        allow $1 $2:shadow { disable };
+        create_channel($1, $2, $2_channel)
+    	allow $1 $2_channel:event create;
+    ')
+    define(`vmi2',`
+        allow $1 $2:event { create };
+    ')
+    # create_domain(priv, target)
+    #   Allow a domain to be created directly
+    define(`create_domain', `
+    	create_domain_common($1, $2)
+    	allow $1 $2_channel:event create;
+    ')
+    # create_domain_build_label(priv, target)
+    #   Allow a domain to be created via its domain build label
+    define(`create_domain_build_label', `
+    	create_domain_common($1, $2_building)
+    	allow $1 $2_channel:event create;
+    	allow $1 $2_building:domain2 relabelfrom;
+    	allow $1 $2:domain2 relabelto;
+    	allow $2_building $2:domain transition;
+    ')
+    # manage_domain(priv, target)
+    #   Allow managing a running domain
+    define(`manage_domain', `
+    	allow $1 $2:domain { getdomaininfo getvcpuinfo getaffinity
+    			getaddrsize pause unpause trigger shutdown destroy
+    			setaffinity setdomainmaxmem getscheduler resume };
+        allow $1 $2:domain2 set_vnumainfo;
+    ')
+    # migrate_domain_out(priv, target)
+    #   Allow creation of a snapshot or migration image from a domain
+    #   (inbound migration is the same as domain creation)
+    define(`migrate_domain_out', `
+    	allow $1 domxen_t:mmu map_read;
+    	allow $1 $2:hvm { gethvmc getparam irqlevel };
+    	allow $1 $2:mmu { stat pageinfo map_read };
+    	allow $1 $2:domain { getaddrsize getvcpucontext getextvcpucontext getvcpuextstate pause destroy };
+    	allow $1 $2:domain2 gettsc;
+    	allow $1 $2:shadow { enable disable logdirty };
+    ')
+    ################################################################################
+    #
+    # Inter-domain communication
+    #
+    ################################################################################
+    # create_channel(source, dest, chan-label)
+    #   This allows an event channel to be created from domains with labels
+    #   <source> to <dest> and will label it <chan-label>
+    define(`create_channel', `
+    	allow $1 $3:event { create send status };
+    	allow $3 $2:event { bind };
+    ')
+    # domain_event_comms(dom1, dom2)
+    #   Allow two domain types to communicate using event channels
+    define(`domain_event_comms', `
+    	create_channel($1, $2, $1_channel)
+    	create_channel($2, $1, $2_channel)
+    ')
+    # domain_comms(dom1, dom2)
+    #   Allow two domain types to communicate using grants and event channels
+    define(`domain_comms', `
+    	domain_event_comms($1, $2)
+    	allow $1 $2:grant { map_read map_write copy unmap };
+    	allow $2 $1:grant { map_read map_write copy unmap };
+    ')
+    # domain_self_comms(domain)
+    #   Allow a non-singleton domain type to communicate with itself using grants
+    #   and event channels
+    define(`domain_self_comms', `
+    	create_channel($1, $1_self, $1_channel)
+    	allow $1 $1_self:grant { map_read map_write copy unmap };
+    ')
+    # device_model(dm_dom, hvm_dom)
+    #   Define how a device model domain interacts with its target
+    define(`device_model', `
+    	type $2_target, domain_type, domain_target_type;
+    	type_transition $2 $1:domain $2_target;
+    	allow $1 $2:domain set_target;
+    	type_transition $2_target domain_type:event $2_channel;
+    	create_channel($1, $2_target, $1_channel)
+    	create_channel($2, $1, $2_channel)
+    	allow $1 $2_channel:event create;
+    	allow $1 $2_target:domain shutdown;
+    	allow $1 $2_target:mmu { map_read map_write adjust physmap target_hack };
+    	allow $1 $2_target:hvm { getparam setparam trackdirtyvram hvmctl irqlevel pciroute cacheattr send_irq };
+    ')
+    # make_device_model(priv, dm_dom, hvm_dom)
+    #   Allow creation of a device model and HVM domain pair
+    define(`make_device_model', `
+    	device_model($2, $3)
+    	allow $1 $2:domain2 make_priv_for;
+    	allow $1 $3:domain2 set_as_target;
+    ')
+    ################################################################################
+    #
+    # Device types and delegation (PCI passthrough)
+    #
+    ################################################################################
+    # use_device(domain, device)
+    #   Allow a device to be used by a domain
+    define(`use_device', `
+        allow $1 $1_self:mmu exchange;
+        allow $1 $2:resource use;
+        allow $1 domio_t:mmu { map_read map_write };
+    ')
+    # admin_device(domain, device)
+    #   Allow a device to be used and delegated by a domain
+    define(`admin_device', `
+        allow $1 $2:resource { setup stat_device add_device add_irq add_iomem add_ioport remove_device remove_irq remove_iomem remove_ioport plug unplug };
+        allow $1 $2:hvm bind_irq;
+        use_device($1, $2)
+    ')
+    # delegate_devices(priv-domain, target-domain)
+    #   Allow devices to be delegated
+    define(`delegate_devices', `
+        allow $1 $2:resource { add remove };
+    ')
+
+5. Paste the following into tools/flask/policy/policy/modules/drakvuf/drakvut.te
+
+    ################################################################################
+    #
+    # Attributes for types
+    #
+    # An attribute may be used in a rule as shorthand for all types with that
+    # attribute.
+    #
+    ################################################################################
+    attribute xen_type;
+    attribute domain_type;
+    attribute domain_self_type;
+    attribute domain_target_type;
+    attribute resource_type;
+    attribute event_type;
+    attribute mls_priv;
+    ################################################################################
+    #
+    # Types for the initial SIDs
+    #
+    # These types are used internally for objects created during Xen startup or for
+    # devices that have not yet been labeled
+    #
+    ################################################################################
+    # The hypervisor itself
+    type xen_t, xen_type, mls_priv;
+    # Domain 0
+    declare_singleton_domain(dom0_t, mls_priv);
+    # Jenkins
+    declare_singleton_domain(jenkins_t, mls_priv);
+    # I/O memory (DOMID_IO pseudo-domain)
+    type domio_t, xen_type;
+    # Xen heap (DOMID_XEN pseudo-domain)
+    type domxen_t, xen_type;
+    # Unlabeled objects
+    type unlabeled_t, xen_type;
+    # The XSM/FLASK security server
+    type security_t, xen_type;
+    # Unlabeled device resources
+    # Note: don't allow access to these types directly; see below for how to label
+    #       devices and use that label for allow rules
+    type irq_t, resource_type;
+    type ioport_t, resource_type;
+    type iomem_t, resource_type;
+    type device_t, resource_type;
+    ################################################################################
+    #
+    # Allow dom0 access to all sysctls, devices, and the security server.
+    #
+    # While this could be written more briefly using wildcards, the permissions are
+    # listed out to make removing specific permissions simpler.
+    #
+    ################################################################################
+    allow dom0_t xen_t:xen {
+    	settime tbufcontrol readconsole clearconsole perfcontrol mtrr_add
+    	mtrr_del mtrr_read microcode physinfo quirk writeconsole readapic
+    	writeapic privprofile nonprivprofile kexec firmware sleep frequency
+    	getidle debug getcpuinfo heap pm_op mca_op lockprof cpupool_op tmem_op
+    	tmem_control getscheduler setscheduler
+    };
+    allow dom0_t xen_t:xen2 {
+        resource_op
+        psr_cmt_op
+        psr_cat_op
+    };
+    allow dom0_t xen_t:xen2 {
+        pmu_ctrl
+    };
+    allow dom0_t xen_t:mmu memorymap;
+    # Allow dom0 to use these domctls on itself. For domctls acting on other
+    # domains, see the definitions of create_domain and manage_domain.
+    allow dom0_t dom0_t:domain {
+    	setvcpucontext max_vcpus setaffinity getaffinity getscheduler
+    	getdomaininfo getvcpuinfo getvcpucontext setdomainmaxmem setdomainhandle
+    	setdebugging hypercall settime setaddrsize getaddrsize trigger
+    	getextvcpucontext setextvcpucontext getvcpuextstate setvcpuextstate
+    	getpodtarget setpodtarget set_misc_info set_virq_handler
+    };
+    allow dom0_t dom0_t:domain2 {
+    	set_cpuid gettsc settsc setscheduler set_max_evtchn set_vnumainfo
+    	get_vnumainfo psr_cmt_op psr_cat_op
+    };
+    allow dom0_t dom0_t:resource { add remove };
+    # These permissions allow using the FLASK security server to compute access
+    # checks locally, which could be used by a domain or service (such as xenstore)
+    # that does not have its own security server to make access decisions based on
+    # Xen's security policy.
+    allow dom0_t security_t:security {
+    	compute_av compute_create compute_member compute_relabel compute_user
+    };
+    # Allow string/SID conversions (for "xl list -Z" and similar)
+    allow dom0_t security_t:security check_context;
+    # Allow flask-label-pci to add and change labels
+    allow dom0_t security_t:security { add_ocontext del_ocontext };
+    # Allow performance parameters of the security server to be tweaked
+    allow dom0_t security_t:security setsecparam;
+    # Allow changing the security policy
+    allow dom0_t security_t:security { load_policy setenforce setbool };
+    # Audit policy change events even when they are allowed
+    auditallow dom0_t security_t:security { load_policy setenforce setbool };
+    admin_device(dom0_t, device_t)
+    admin_device(dom0_t, irq_t)
+    admin_device(dom0_t, ioport_t)
+    admin_device(dom0_t, iomem_t)
+    domain_comms(dom0_t, dom0_t)
+    # Allow all domains to use (unprivileged parts of) the tmem hypercall
+    allow domain_type xen_t:xen tmem_op;
+    # Allow guest console output to the serial console.  This is used by PV Linux
+    # and stub domains for early boot output, so don't audit even when we deny it.
+    # Without XSM, this is enabled only if the Xen was compiled in debug mode.
+    gen_bool(guest_writeconsole, true)
+    if (guest_writeconsole) {
+    	allow domain_type xen_t : xen writeconsole;
+    } else {
+    	dontaudit domain_type xen_t : xen writeconsole;
+    }
+    # Allow all domains to use PMU (but not to change its settings --- that's what
+    # pmu_ctrl is for)
+    allow domain_type xen_t:xen2 pmu_use;
+    ###############################################################################
+    #
+    # Domain creation
+    #
+    ###############################################################################
+    declare_domain(domU_t)
+    domain_self_comms(domU_t)
+    create_domain(dom0_t, domU_t)
+    manage_domain(dom0_t, domU_t)
+    domain_comms(dom0_t, domU_t)
+    domain_comms(domU_t, domU_t)
+    migrate_domain_out(dom0_t, domU_t)
+    declare_domain(jenkins_domU_t)
+    create_domain(dom0_t, jenkins_domU_t)
+    manage_domain(dom0_t, jenkins_domU_t)
+    manage_domain(jenkins_t, jenkins_domU_t)
+    vmi(dom0_t, jenkins_domU_t)
+    vmi(jenkins_t, jenkins_domU_t)
+    domain_comms(dom0_t, jenkins_domU_t)
+    domain_comms(jenkins_t, jenkins_domU_t)
+    domain_self_comms(jenkins_domU_t)
+    create_domain(dom0_t, jenkins_t)
+    manage_domain(dom0_t, jenkins_t)
+    domain_comms(dom0_t, jenkins_t)
+    domain_self_comms(jenkins_t)
+    declare_domain(isolated_domU_t)
+    create_domain(dom0_t, isolated_domU_t)
+    manage_domain(dom0_t, isolated_domU_t)
+    domain_comms(dom0_t, isolated_domU_t)
+    migrate_domain_out(dom0_t, isolated_domU_t)
+    domain_self_comms(isolated_domU_t)
+    # Declare a boolean that denies creation of prot_domU_t domains
+    gen_bool(prot_doms_locked, false)
+    declare_domain(prot_domU_t)
+    if (!prot_doms_locked) {
+    	create_domain(dom0_t, prot_domU_t)
+    	migrate_domain_out(dom0_t, prot_domU_t)
+    }
+    domain_comms(dom0_t, prot_domU_t)
+    domain_comms(domU_t, prot_domU_t)
+    domain_comms(prot_domU_t, prot_domU_t)
+    domain_self_comms(prot_domU_t)
+    # Device model for domU_t.  You can define distinct types for device models for
+    # domains of other types, or add more make_device_model lines for this type.
+    declare_domain(dm_dom_t)
+    create_domain(dom0_t, dm_dom_t)
+    manage_domain(dom0_t, dm_dom_t)
+    domain_comms(dom0_t, dm_dom_t)
+    make_device_model(dom0_t, dm_dom_t, domU_t)
+    # nomigrate_t must be built via the nomigrate_t_building label; once built,
+    # dom0 cannot read its memory.
+    declare_domain(nomigrate_t)
+    declare_build_label(nomigrate_t)
+    create_domain_build_label(dom0_t, nomigrate_t)
+    manage_domain(dom0_t, nomigrate_t)
+    domain_comms(dom0_t, nomigrate_t)
+    domain_self_comms(nomigrate_t)
+    ###############################################################################
+    #
+    # Device delegation
+    #
+    # This requires that the device be labeled with a type defined here.  You can
+    # use flask-label-pci to dynamically label devices on each boot or define the
+    # labels statically in tools/flask/policy/policy/device_contexts
+    #
+    ###############################################################################
+    type nic_dev_t, resource_type;
+    admin_device(dom0_t, nic_dev_t)
+    use_device(domU_t, nic_dev_t)
+    delegate_devices(dom0_t, domU_t)
+    ################################################################################
+    #
+    # Policy constraints
+    #
+    # Neverallow rules will cause the policy build to fail if an allow rule exists
+    # that violates the expression. This is used to ensure proper labeling of
+    # objects.
+    #
+    ################################################################################
+    # Domains must be declared using domain_type
+    neverallow * ~domain_type:domain { create transition };
+    # Resources must be declared using resource_type
+    neverallow * ~resource_type:resource use;
+    # Events must use event_type (see create_channel for a template)
+    neverallow ~event_type *:event bind;
+    neverallow * ~event_type:event { create send status };
+    ################################################################################
+    #
+    # Roles
+    #
+    ################################################################################
+    # The object role (object_r) is used for devices, resources, and event channels;
+    # it does not need to be defined here and should not be used for domains.
+    # The system role is used for utility domains and pseudo-domains
+    role system_r;
+    role system_r types { xen_type domain_type };
+    # If you want to prevent domUs from being placed in system_r:
+    #role system_r types { xen_type dom0_t jenkins_t };
+    # The vm role is used for customer virtual machines
+    role vm_r;
+    role vm_r types { domain_type -dom0_t -jenkins_t };
+
+6. Build the policy and load it
+   cd tools/flask
+   make
+   xl loadpolicy policy/xenpolicy-4.6.0
