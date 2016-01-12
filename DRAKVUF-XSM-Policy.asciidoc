@@ -419,7 +419,8 @@ The following XSM policy can be used to run DRAKVUF from a secondary control dom
     role vm_r;
     role vm_r types { domain_type -dom0_t -jenkins_t };
 
-6. Build the policy and load it
-   cd tools/flask
-   make
-   xl loadpolicy policy/xenpolicy-4.6.0
+6. Build the policy and load it:
+
+    cd tools/flask
+    make
+    xl loadpolicy policy/xenpolicy-4.6.0
