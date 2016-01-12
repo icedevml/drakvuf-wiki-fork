@@ -197,7 +197,7 @@ The following XSM policy can be used to run DRAKVUF from a secondary control dom
         allow $1 $2:resource { add remove };
     ')
 
-5. Paste the following into tools/flask/policy/policy/modules/drakvuf/drakvut.te
+5. Paste the following into tools/flask/policy/policy/modules/drakvuf/drakvuf.te
 
     ################################################################################
     #
