@@ -16,9 +16,8 @@ Plugin interfaces
 -----------------
 
 Each plugin must adhere to the plugin interface defined by DRAKVUF in order to be properly loaded. You should implement the following functions that will serve as the main interaction points between your plugin and DRAKVUF:
-  * `int plugin_myplugin_init(drakvuf_t drakvuf, const char *rekall_profile)` - Initialization: Collect information about where and how traps should be placed.
-  * `int plugin_myplugin_start(drakvuf_t drakvuf)` - Startup: Traps are placed to the target VM based on the data collected during initialization.
-  * `int plugin_myplugin_close(drakvuf_t drakvuf)` - Cleanup: Internal data structures and allocated memory should be deleted/freed here.
+  * `int plugin_myplugin_start(drakvuf_t drakvuf, const char *rekall_profile)` - Collect information about where and how traps should be placed and add these traps. Note: if your plugin requires additional information startup information beside the Rekall profile, you should declare a custom structure to hold this input information.
+  * `int plugin_myplugin_stop(drakvuf_t drakvuf)` - Cleanup: Internal data structures and allocated memory should be deleted/freed here.
 
 These functions should return 0 on error and 1 on success. Place the declaration of these functions to `myplugin.h`
 
@@ -80,8 +79,8 @@ And extend the `plugins` array like this:
 ```c
 static plugin_t plugins[] = { 
     // ...
-    [PLUGIN_MYPLUGIN] = { .init = plugin_myplugin_init,
-                          .start = plugin_myplugin_start,
-                          .close = plugin_myplugin_close },
+    [PLUGIN_MYPLUGIN] =
+         { .start = plugin_myplugin_start,
+           .stop = plugin_myplugin_stop },
 }
 ```
