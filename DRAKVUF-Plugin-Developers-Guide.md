@@ -7,7 +7,7 @@ File structure
 Plugins should be placed in the `src/plugins` directory. It is highly recommended to choose a unique letters-only name for your plugins and use it consistently. In this guide our imaginary plugin will be called `myplugin` and will be referenced with the lower- or upper-case version of this name depending on the context. 
 
 You should create at least the following files for your plugin:
-  * `src/plugins/myplugin/myplugin.c` - Main plugin functionality
+  * `src/plugins/myplugin/myplugin.cpp` - Main plugin functionality
   * `src/plugins/myplugin/myplugin.h` - Function headers
 
 Some plugins contain a separate `private.h` header too that contains definitions for structures internally used by the plugin. You can further add more source files and private headers as you see fit during the development of your plugin.
@@ -15,11 +15,7 @@ Some plugins contain a separate `private.h` header too that contains definitions
 Plugin interfaces
 -----------------
 
-Each plugin must adhere to the plugin interface defined by DRAKVUF in order to be properly loaded. You should implement the following functions that will serve as the main interaction points between your plugin and DRAKVUF:
-  * `int plugin_myplugin_start(drakvuf_t drakvuf, const char *rekall_profile)` - Collect information about where and how traps should be placed and add these traps. Note: if your plugin requires additional information startup information beside the Rekall profile, you should declare a custom structure to hold this input information.
-  * `int plugin_myplugin_stop(drakvuf_t drakvuf)` - Cleanup: Internal data structures and allocated memory should be deleted/freed here.
-
-These functions should return 0 on error and 1 on success. Place the declaration of these functions to `myplugin.h`
+Each plugin is its own C++ class, where the class definition is placed in `myplugin.h`. The only requirement DRAKVUF places on the the C++ class is that it needs to define a constructor which takes two inputs: `myplugin::myplugin(drakvuf_t drakvuf, const void *config)`.
 
 Integration
 -----------
@@ -56,17 +52,17 @@ To tell the build system what source-files need to be compiled in your plugin, a
 
 ```
 if PLUGIN_MYPLUGIN
-sources += myplugin/myplugin.c
+sources += myplugin/myplugin.cpp
 endif
 ```
 
-before the `sources += plugins.c plugins.h` line (indicated by comments),
+before the `sources += plugins.cpp plugins.h` line (indicated by comments),
 
 ### src/plugins/plugins.h
 
 Add `PLUGIN_MYPLUGIN` to the `drakvuf_plugin` enumeration
 
-### src/plugins/private.h
+### src/plugins/plugins.cpp
 
 Include your plugins header file:
 
@@ -74,13 +70,20 @@ Include your plugins header file:
 #include "myplugin/myplugin.h"
 ```
 
-And extend the `plugins` array like this:
+Add a block for your plugin in the start function's switch statement:
 
 ```c
-static plugin_t plugins[] = { 
-    // ...
-    [PLUGIN_MYPLUGIN] =
-         { .start = plugin_myplugin_start,
-           .stop = plugin_myplugin_stop },
-}
+#ifdef ENABLE_PLUGIN_MYPLUGIN
+        case PLUGIN_MYPLUGIN:
+            this->plugins[plugin_id] = new myplugin(this->drakvuf, config);
+            break;
+#endif
+```
+
+Passing state through libdrakvuf
+-----------
+In order to maintain the state of the plugin through libdrakvuf drakvuf_trap_t, the class' `this` pointer should be passed through the libdrakvuf trap's `data` field as such:
+
+```c
+trap->data = (void*)this;
 ```
