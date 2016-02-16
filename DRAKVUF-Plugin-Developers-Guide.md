@@ -15,7 +15,7 @@ Some plugins contain a separate `private.h` header too that contains definitions
 Plugin interfaces
 -----------------
 
-Each plugin is its own C++ class, where the class definition is placed in `myplugin.h`. The only requirement DRAKVUF places on the the C++ class is that it needs to define a constructor which takes two inputs: `myplugin::myplugin(drakvuf_t drakvuf, const void *config)`.
+Each plugin is its own C++ class, where the class definition is placed in `myplugin.h`. The two requirements DRAKVUF places on the the C++ class is that it needs to extend the dummy plugin class (`class myplugin: public plugin`), and define a constructor which takes two inputs: `myplugin::myplugin(drakvuf_t drakvuf, const void *config)`.
 
 Integration
 -----------
