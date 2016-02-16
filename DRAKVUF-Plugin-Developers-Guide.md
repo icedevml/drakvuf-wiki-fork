@@ -8,7 +8,7 @@ Plugins should be placed in the `src/plugins` directory. It is highly recommende
 
 You should create at least the following files for your plugin:
   * `src/plugins/myplugin/myplugin.cpp` - Main plugin functionality
-  * `src/plugins/myplugin/myplugin.h` - Function headers
+  * `src/plugins/myplugin/myplugin.h` - Class definition
 
 Some plugins contain a separate `private.h` header too that contains definitions for structures internally used by the plugin. You can further add more source files and private headers as you see fit during the development of your plugin.
 
