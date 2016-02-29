@@ -1,7 +1,9 @@
 If you encounter problems with DRAKVUF, the best option is to enable the printing of additional debug information so that the root cause of your problem can potentially be spotted. For this, you will need to recompile DRAKVUF and run it again the VM you have experienced the error on.
 
 ```c
-make clean
+git clean -xdf
+git reset --hard
+./autogen.sh
 ./configure --enable-debug
 make
 ```
