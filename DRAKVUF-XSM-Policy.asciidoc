@@ -13,6 +13,7 @@ The following XSM policy can be used to run DRAKVUF from a secondary control dom
 3. Change the users defined on the system by editing tools/flask/policy/policy/users and add
 
    gen_user(normal,, vm_r, s0, s0)
+   gen_user(jenkins,, vm_r system_r, s0, s0)
 
 4. Paste the following into tools/flask/policy/policy/modules/drakvuf/drakvuf.if
 
@@ -424,3 +425,11 @@ The following XSM policy can be used to run DRAKVUF from a secondary control dom
     cd tools/flask
     make
     xl loadpolicy policy/xenpolicy-4.6.0
+
+7. Add the seclabel to your VMs configuration file.
+
+   # Secondary control domain:
+   seclabel='jenkins:system_r:jenkins_t'
+
+   # Domain belonging to the secondary control domain
+   seclabel='normal:vm_r:jenkins_domU_t'
