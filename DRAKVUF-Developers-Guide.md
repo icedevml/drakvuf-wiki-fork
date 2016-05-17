@@ -1,5 +1,6 @@
-Since DRAKVUF 0.2 new functionality can be added in form of independent plugins. 
-This guide aims to help developing new plugins.
+Git workflow
+--------------
+DRAKVUF uses the rebasing git workflow. If you are looking to contribute your patches back to the mainline DRAKVUF repository, you should make your patches be part of a git feature branch. This branch will need to be starting from the master DRAKVUF branch to avoid conflicts. You can read more about this type of workflow at the following page: https://www.atlassian.com/git/tutorials/merging-vs-rebasing
 
 File structure
 --------------
