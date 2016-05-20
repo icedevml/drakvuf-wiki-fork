@@ -76,7 +76,7 @@ Add a block for your plugin in the start function's switch statement:
 ```c
 #ifdef ENABLE_PLUGIN_MYPLUGIN
         case PLUGIN_MYPLUGIN:
-            this->plugins[plugin_id] = new myplugin(this->drakvuf, config);
+            this->plugins[plugin_id] = new myplugin(this->drakvuf, config, output_format);
             break;
 #endif
 ```
