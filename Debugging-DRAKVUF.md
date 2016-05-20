@@ -8,6 +8,8 @@ git reset --hard
 make
 ```
 
+Make sure you add the `-v` option to the inputs you are passing to DRAKVUF to activate the debug output printing.
+
 If you suspect that a certain plugin is causing the problem, you should turn off all other plugins to better isolate the problem, which you can do with the `--disable-plugin-<pluginname>` configure option. For example:
 
 ```c
