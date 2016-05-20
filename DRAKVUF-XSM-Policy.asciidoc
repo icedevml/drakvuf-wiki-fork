@@ -432,4 +432,4 @@ The following XSM policy can be used to run DRAKVUF from a secondary control dom
    seclabel='jenkins:system_r:jenkins_t'
 
    # Domain belonging to the secondary control domain
-   seclabel='normal:vm_r:jenkins_domU_t'
+   seclabel='jenkins:vm_r:jenkins_domU_t'
