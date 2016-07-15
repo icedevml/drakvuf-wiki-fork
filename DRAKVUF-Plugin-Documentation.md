@@ -7,6 +7,7 @@ Currently available plugins:
 - [exmon](#exmon)
 - [filetracer](#filetracer)
 - [filedelete](#filedelete)
+- [ssdtmon](#ssdtmon)
 
 syscalls
 --------
@@ -90,3 +91,7 @@ NTSTATUS ZwSetInformationFile(
   _In_  FILE_INFORMATION_CLASS FileInformationClass
 );
 ``` 
+
+SSDTmon
+----------
+The SSDTmon plugin monitors write-memory accesses to the System Service Descriptor Table used to store pointers to the system call handling functions. If malware hooks this table and redirects system calls, the `syscalls` plugin is affected as the original function(s) may no longer get called where it originally trapped. If this plugin detects a change, one must assume that the syscall plugin output is no longer complete.
