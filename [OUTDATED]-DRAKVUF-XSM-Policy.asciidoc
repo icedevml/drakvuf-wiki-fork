@@ -1,3 +1,6 @@
+***This Wiki entry is now outdated. The up-to-date XSM policy for DRAKVUF is now included in the Xen submodule within the DRAKVUF tree.***
+
+-----
 The following XSM policy can be used to run DRAKVUF from a secondary control domain on Xen 4.6 or later using the XSM framework. In order to be able to load this policy, Xen has to be compiled with XSM enabled. This policy creates a secondary control domain class named "jenkins_t" and a guest type to be introspected "jenkins_domU_t".
 
 1. Create a folder in your Xen source folder in tools/flask/policy/policy/modules named drakvuf
