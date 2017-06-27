@@ -8,6 +8,7 @@ Currently available plugins:
 - [filetracer](#filetracer)
 - [filedelete](#filedelete)
 - [ssdtmon](#ssdtmon)
+- [socketmon](#socketmon)
 
 syscalls
 --------
@@ -95,3 +96,18 @@ NTSTATUS ZwSetInformationFile(
 SSDTmon
 ----------
 The SSDTmon plugin monitors write-memory accesses to the System Service Descriptor Table used to store pointers to the system call handling functions. If malware hooks this table and redirects system calls, the `syscalls` plugin is affected as the original function(s) may no longer get called where it originally trapped. If this plugin detects a change, one must assume that the syscall plugin output is no longer complete.
+
+socketmon
+----------
+The socketmon plugin monitors the usage of TCP and UPD sockets for Windows guests. It requires the creation of a Rekall profile for the tcpip.sys kernel module, which is normally located at `C:\Windows\System32\drivers\tcpip.sys`. You will need to copy this file to where you will be generating the Rekall profile at. To generate a Rekall profile for it you can use the `pdbparse` project to obtain the PDB:
+```
+    apt-get install python-construct python-pefile
+    git clone https://github.com/moyix/pdbparse
+    cd pdbparse
+    python setup.py build
+    cd examples
+    ./symchk.py -e tcpip.sys
+```
+Then you can use Rekall to create the profile:
+```
+    rekal parse_pdb tcpip.pdb > tcpip.json
