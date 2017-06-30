@@ -70,13 +70,7 @@ VOID NTAPI KiDispatchException 	(
 
 filetracer
 ----------
-The `filetracer` plugin monitors the allocation of `_FILE_OBJECT` structures on the Windows kernel heap to extract the information about what files are being accessed in the guest. This operation requires multiple-steps.
-
-1. Monitoring the execution of ExAllocatePoolWithTag and trapping the return point to the caller.
-2. When the function returns from the allocation of a `_FILE_OBJECT`, WRITE monitoring the memory page where the structure was allocated.
-3. When the FileName pointer is updated, reading out the path string and removing the WRITE monitoring from the page.
-
-In our experience ExAllocatePoolWithTag is mostly called from a single location and thus the return location is always the same. As such, we don't actually remove the return point breakpoint, instead we verify that the object allocated is a `_FILE_OBJECT` by checking the `_POOL_HEADER` of the object.
+The `filetracer` plugin monitors the use of `_FILE_OBJECT` structures by system-calls as well as internal kernel functions used by kernel drivers. With this approach we get a complete view of files being accessed on the system.
 
 filedelete
 ----------
