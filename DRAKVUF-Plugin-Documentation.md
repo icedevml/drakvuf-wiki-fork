@@ -12,10 +12,7 @@ Currently available plugins:
 
 syscalls
 --------
-The `syscalls` plugin is responsible for tracking the execution of function-entry-points responsible to handling system calls on Windows 7. The function accomplishes this by looping through the Rekall-profile of the Windows guest and using a BREAKPOINT trap on each function whose name starts with Nt.
-
-Currently the function inputs and output is not tracked. Prototypes of the these functions have recently been collected and can be found at https://github.com/tklengyel/drakvuf/blob/master/src/plugins/syscalls/scproto.h and integrating this information into the plugin is an open TODO item.
-
+The `syscalls` plugin is responsible for tracking the execution of function-entry-points responsible to handling system calls on Windows and Linux. The function accomplishes this by looping through the Rekall-profile and using a BREAKPOINT trap on each function whose name starts with `Nt` on Windows and `sys_` on Linux.
 
 poolmon
 -------
