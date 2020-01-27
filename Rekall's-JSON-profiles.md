@@ -51,8 +51,4 @@ make
 
 This will generate a ZIP file with your kernel-version as filename. For example, 3.16.0-4-amd64.zip. Copy this file to your DRAKVUF&trade; host (for example using scp). There we will conver$
 <pre><code>rekal convert_profile 3.16.0-4-amd64.zip /root/linux.json
-sudo printf "linux { \n\
-    ostype = \"Linux\"; \n\
-    rekall_profile = \"/root/linux.json\"; \n\
-}" >> /etc/libvmi.conf
 </code></pre>
