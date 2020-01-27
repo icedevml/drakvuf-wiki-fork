@@ -38,7 +38,7 @@ The generated /tmp/peinfo.txt file will contain the required PDB filename and GU
 Now generate the Rekall profile (make sure to adjust the kernel name and GUID as necessary):
 <pre><code>cd /tmp
 python3 rekall fetch_pdb ntkrpamp 684da42a30cc450f81c535b4d18944b12
-python3 rekall parse_pdb ntkrpamp > windows7-sp1.rekall.json
+python3 rekall parse_pdb ntkrpamp > ~/windows7-sp1.rekall.json
 </code></pre>
 
 For Linux you need to build the initial kernel profile in the guest itself.
@@ -49,6 +49,6 @@ cd rekall/tools/linux
 make
 </code></pre>
 
-This will generate a ZIP file with your kernel-version as filename. For example, 3.16.0-4-amd64.zip. Copy this file to your DRAKVUF&trade; host (for example using scp). There we will conver$
-<pre><code>rekal convert_profile 3.16.0-4-amd64.zip /root/linux.json
+This will generate a ZIP file with your kernel-version as filename. For example, 3.16.0-4-amd64.zip. Copy this file to your DRAKVUF&trade; host (for example using scp). There we will convert it to JSON:
+<pre><code>rekal convert_profile 3.16.0-4-amd64.zip ~/3.16.0-4-amd64.rekall.json
 </code></pre>
