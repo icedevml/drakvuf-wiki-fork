@@ -16,9 +16,10 @@ Now lets make Python 3 the default and install some required packages:
 sudo /opt/python3.5.7/bin/pip3.5 install fastchunking wheel future==0.16.0
 </code></pre>
 
-Install Rekall from the submodule:
+Install Rekall from git:
 
-<pre><code>cd rekall/rekall-core
+<pre><code>git clone https://github.com/tklengyel/rekall
+cd rekall/rekall-core
 ./setup.py build
 sudo ./setup.py install
 </code></pre>
