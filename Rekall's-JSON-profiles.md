@@ -20,8 +20,8 @@ Install Rekall from git:
 
 <pre><code>git clone --depth=1 https://github.com/tklengyel/rekall
 cd rekall/rekall-core
-./setup.py build
-sudo ./setup.py install
+python3 ./setup.py build
+sudo python3 ./setup.py install
 </code></pre>
 
 If vmi-win-guid fails to find the Windows kernel in memory, you can use Rekall to examine ntoskrnl.exe on the disk:
