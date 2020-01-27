@@ -28,7 +28,7 @@ If vmi-win-guid fails to find the Windows kernel in memory, you can use Rekall t
 <pre><code>sudo su
 kpartx -a /dev/vg/windows7
 mount -o ro /dev/vg/windows7p1 /mnt
-python3 rekal peinfo -f /mnt/Windows/System32/ntoskrnl.exe > /tmp/peinfo.txt
+python3 rekall peinfo -f /mnt/Windows/System32/ntoskrnl.exe > /tmp/peinfo.txt
 umount /mnt
 kpartx -d /dev/vg/windows7
 </code></pre>
@@ -50,5 +50,5 @@ make
 </code></pre>
 
 This will generate a ZIP file with your kernel-version as filename. For example, 3.16.0-4-amd64.zip. Copy this file to your DRAKVUF&trade; host (for example using scp). There we will convert it to JSON:
-<pre><code>rekal convert_profile 3.16.0-4-amd64.zip ~/3.16.0-4-amd64.rekall.json
+<pre><code>python3 rekall convert_profile 3.16.0-4-amd64.zip ~/3.16.0-4-amd64.rekall.json
 </code></pre>
