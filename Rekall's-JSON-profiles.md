@@ -1,4 +1,4 @@
-The recommended way of generating JSON profiles is now using Volatility3/dwarf2json, but in case anyone still nedds Rekall, the instructions are as follows.
+The recommended way of generating JSON profiles is now using Volatility3/dwarf2json, but in case anyone still needs Rekall, the instructions are as follows.
 
 Rekall is unfortunately buggy with newer versions of Python3 so we have to stick to Python 3.5.7:
 
