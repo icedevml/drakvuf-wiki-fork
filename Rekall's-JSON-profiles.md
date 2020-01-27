@@ -44,7 +44,7 @@ python3 rekall parse_pdb ntkrpamp > windows7-sp1.rekall.json
 For Linux you need to build the initial kernel profile in the guest itself.
 <pre><code>ssh root@linux
 apt-get install git zip linux-headers-$(uname -r) build-essential
-git clone --depth=1 https://github.com/google/rekall
+git clone --depth=1 https://github.com/tklengyel/rekall
 cd rekall/tools/linux
 make
 </code></pre>
