@@ -107,11 +107,11 @@ Then you can use Rekall to create the profile:
 
 memdump
 -------
-(TODO)
+This plugin is responsible for taking memory dumps whenever some memory appears to be interesting (by appropriate heuristics). By default, memory dumps are not stored anywhere unless `--memdump-dir <dir>` is provided.
 
 apimon
 ---------------
-The `apimon` plugin is able to monitor WinAPI calls. You can tune what do you want to trace by starting DRAKVUF with `--dll-hooks-list <dll-hooks-list-file>` command line switch.
+The `apimon` plugin is able to monitor WinAPI calls. You can tune what do you want to trace by starting DRAKVUF with `--dll-hooks-list <dll-hooks-list-file>` command line switch. This configuration is common with the `memdump` plugin and will be also consumed by it.
 
 The current format for `dll-hooks-list` file is:
 
