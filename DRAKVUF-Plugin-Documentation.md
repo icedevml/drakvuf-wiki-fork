@@ -9,6 +9,7 @@ Currently available plugins:
 - [filedelete](#filedelete)
 - [ssdtmon](#ssdtmon)
 - [socketmon](#socketmon)
+- [apimon, memdump](#apimon-memdump)
 
 syscalls
 --------
@@ -102,3 +103,28 @@ The socketmon plugin monitors the usage of TCP and UPD sockets for Windows guest
 Then you can use Rekall to create the profile:
 ```
     rekal parse_pdb tcpip.pdb > tcpip.json
+```
+
+memdump
+-------
+(TODO)
+
+apimon
+---------------
+The `apimon` plugin is able to monitor WinAPI calls. You can tune what do you want to trace by starting DRAKVUF with `--dll-hooks-list <dll-hooks-list-file>` command line switch.
+
+The current format for `dll-hooks-list` file is:
+
+```
+<dll-name>,<function-name>,<strategy>,<arg1>,<arg2>,<arg3...>
+```
+
+where:
+* `dll-name` is a name of DLL you want to hook, e.g. `ntdll.dll`
+* `function-name` is a name of function exported by this DLL, e.g. `LdrLoadDll`
+* `strategy` is one of:
+  * `log` (`apimon` will log that the function was called, what were the argument values and what was the return value)
+  * `stack` (`memdump` will perform stack inspection and will try to make some memory dumps after this function is called)
+  * `log+stack` (both above)
+
+See [src/plugins/apimon/example/dll-hooks-list-win7x64](https://github.com/tklengyel/drakvuf/blob/master/src/plugins/apimon/example/dll-hooks-list-win7x64) for an example configuration file dedicated for Windows 7 (x64).
